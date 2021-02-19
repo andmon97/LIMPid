@@ -2,6 +2,7 @@
 import Prelude hiding ((+++))
 import Data.Char 
 import System.IO 
+import Data.List (isPrefixOf)
 
 getCh           :: IO Char
 getCh           = do hSetEcho stdin False
@@ -61,7 +62,52 @@ sat p           = item >>>= \env x ->
                     else 
                         failure
 
-
 -- Parse ua specific character 
 char            :: Char -> Parser Char
 char x          = sat (x ==) 
+
+
+
+--                  UTILITIES FUNCTIONS                     --
+
+{- "setEnv" sets the environment adding or sobstituting a couple var-val
+- v is the NAME of the variable
+- a is the VALUE of the var (String type because it will be substituted in the string code)
+- es is the environment -}
+setEnv         :: String -> String -> Env -> Env 
+setEnv v a []  = [(v, a)]
+setEnv v a (e:es)
+                | (fst e) == v  = [(v, a)] ++ es 
+                | otherwise     = e: (setEnv v a es)
+
+{- "replace" repl. a variable in the environment
+- v is the couple name,value of the variable
+- xs is the expression to evaluate -}
+replace        :: (String, String) -> String -> String
+replace v []   = []
+replace v xs 
+    | (fst v) `isPrefixOf` xs = (snd v) ++ replace v (drop (length (fst v)) xs)
+    | otherwise = (xs !! 0) : replace v (drop 1 xs)
+
+{- "bind" is a function that interpeters all the variable in the env
+-- es enviroment of variables
+-- xs expression to evaluate -}
+bind           :: Env -> String -> String 
+bind [] xs     = xs
+bind es []     = []
+bind (e:es) xs = bind es (replace e xs) 
+
+-- "getCode" extract the code (type of a) from the tuple --
+getCode             :: [(Env, a, String)] -> a 
+getCode [(_,x,_)]   = x 
+
+-- extract the env state (is like a toString method) -- 
+getMemory               :: [(Env, a, String)] -> String 
+getMemory []            = []
+getMemory [([],_,_)]    = []
+
+-- extract the environment from the tuple --
+getEnv                  :: [(Env, a, String)] -> Env 
+getEnv []               = []
+getEnv [([],_,_)]       = []
+getEnv [(x,_,_)]        = x 
