@@ -19,9 +19,9 @@ type Env    =   [(String, String)]
 type Parser a = Env -> String -> [(Env, a, String)]
 
 
-
+-- _____________________________________________________________________________________________________________________________________--
 --                  PARSER FUNCTIONS                --
-
+-- _____________________________________________________________________________________________________________________________________--
 -- "item" parses the first element of a list and return the rest of the list
 item            :: Parser Char
 item            = \env inp -> case inp of
@@ -67,9 +67,9 @@ char            :: Char -> Parser Char
 char x          = sat (x ==) 
 
 
-
+-- _____________________________________________________________________________________________________________________________________--
 --                  UTILITIES FUNCTIONS                     --
-
+-- _____________________________________________________________________________________________________________________________________--
 {- "setEnv" sets the environment adding or sobstituting a couple var-val
 - v is the NAME of the variable
 - a is the VALUE of the var (String type because it will be substituted in the string code)
@@ -111,3 +111,36 @@ getEnv                  :: [(Env, a, String)] -> Env
 getEnv []               = []
 getEnv [([],_,_)]       = []
 getEnv [(x,_,_)]        = x 
+
+
+-- _____________________________________________________________________________________________________________________________________--
+--                      KEYWORDS AND SYMBOLS
+-- _____________________________________________________________________________________________________________________________________--
+
+-- Parse the "True" keyword
+trueKeyword     :: Parser String
+trueKeyword     = char 'T' >>>= \env _ -> char 'r' >>>= \_ _ -> char 'u' >>>= \_ _ -> char 'e' >>>= \_ _ -> parseReturn env ("True")
+
+-- Parse the "False" keyword
+falseKeyword    :: Parser String
+falseKeyword    = char 'F' >>>= \env _ -> char 'a' >>>= \_ _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> parseReturn env ("False")
+
+-- Parse the "skip" keyword
+skipKeyword     :: Parser String
+skipKeyword     = char 's' >>>= \env _ -> char 'k' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'p' >>>= \_ _ -> parseReturn env ("skip")
+
+-- Parse the "if" keyword
+ifKeyword       :: Parser String
+ifKeyword       = char 'i' >>>= \env _ -> char 'f' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("if ")
+
+-- Parse the "else" keyword
+elseKeyword     :: Parser String
+elseKeyword     = char 'e' >>>= \env _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("else ")
+
+-- Parse the "do" keyword
+doKeyword       :: Parser String
+doKeyword       = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("do ")
+
+-- Parse the "while" keyword
+whileKeyword    :: Parser String
+whileKeyword    = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'l'  >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("while ")
