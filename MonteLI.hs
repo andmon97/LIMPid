@@ -144,3 +144,20 @@ doKeyword       = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ 
 -- Parse the "while" keyword
 whileKeyword    :: Parser String
 whileKeyword    = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'l'  >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("while ")
+
+--      chars parsers
+-- Parse the opened pargraf
+openPargraf     :: Parser String 
+openPargraf     = char '{' >>>= \env _ -> space >>>= \_ _ -> parseReturn env ("{ ")
+
+-- Parse the closed pargraf
+closePargraf   :: Parser String
+closePargraf   = char '}' >>>= \env _ -> parseReturn env ("}")
+
+-- Parse the opened square parenth.
+openPar        :: Parser String 
+openPar        = char '(' >>>= \env _ -> parseReturn env (")")
+
+-- Parse the closed square parenth.
+closePar        :: Parser String 
+closePar        = char ')' >>>= \env _ -> space >>>= \_ _ -> parseReturn env (")")
