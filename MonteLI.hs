@@ -161,3 +161,32 @@ openPar        = char '(' >>>= \env _ -> parseReturn env (")")
 -- Parse the closed square parenth.
 closePar        :: Parser String 
 closePar        = char ')' >>>= \env _ -> space >>>= \_ _ -> parseReturn env (")")
+
+-- Parse the colon
+colon           :: Parser String
+colon           = char ',' >>>= \env _ ->
+                                        (
+                                            space >>>= \_ _ ->
+                                            parseReturn env ", "
+                                        )
+                                        +++
+                                        parseReturn env ","
+
+-- Parse the semicolon
+semicolon       :: Parser String
+semicolon       = char ',' >>>= \env _ ->
+                                        (
+                                            space >>>= \_ _ ->
+                                            parseReturn env "; "
+                                        )
+                                        +++
+                                        parseReturn env ";"
+
+-- Parse the space character
+space           :: Parser Char
+space           = char ' '
+
+-- Parse a string of spaces
+spaces          :: Parser String 
+spaces          = char ' ' >>>= \env _ -> parseReturn env " "
+                
