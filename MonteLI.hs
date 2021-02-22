@@ -277,3 +277,73 @@ parseaexpr  = parseaterm >>>= \env t ->
                           )
                           +++ parserReturn env t
                           
+-- BOOLEAN EXPRESSIONS
+
+-- Boolean factor made of Arithmetic expression combined by comparison operator
+parsebfactor :: Parser String
+parsebfactor = (parseaexpr >>>= \env a1 -> 
+                          (
+                              char '<' >>>= \env _ ->
+                                parseaexpr >>>= \env a2 ->
+                                  parserReturn env ( a1 ++"<"++ a2)
+                          )
+                          +++
+                          (
+                              char '>' >>>= \env _ ->
+                                parseaexpr >>>= \env a2 ->
+                                  parserReturn env (a1 ++">"++ a2)
+                          )
+                          +++
+                          (
+                              char '=' >>>= \env _ ->
+                                parseaexpr >>>= \env a3 ->
+                                  parserReturn env (a1 ++"="++ a3)
+                          ) +++
+                          (
+                              char '<' >>>= \env _ ->
+                                char '=' >>>= \env _ ->
+                                parseaexpr >>>= \env a2 ->
+                                  parserReturn env ( a1 ++"<="++ a2)
+                          )
+                          +++
+                          (
+                              char '>' >>>= \env _ ->
+                                char '=' >>>= \env _ ->
+                                parseaexpr >>>= \env a2 ->
+                                  parserReturn env (a1 ++">="++ a2)
+                          )
+                          +++
+                          (
+                              char '!' >>>= \env _ ->
+                                char '=' >>>= \env _ ->
+                                parseaexpr >>>= \env a3 ->
+                                  parserReturn env (a1 ++"!="++ a3)
+                          ) 
+               ) 
+               +++ (variable >>>= \env v ->
+                       parserReturn env v)
+
+-- Boolean term made of boolean factors, a boolean expression inside parentheses and negation operator
+parsebterm :: Parser String
+parsebterm = 
+             ((trueKeyword +++ falseKeyword) >>>= \env b1 -> parserReturn env b1) +++
+             (parsebfactor >>>= \env b2 -> parserReturn env b2) +++
+             ((trueKeyword +++ falseKeyword) >>>= \env b2 -> parserReturn env b2) +++
+             (char '(' >>>= \env _ -> parsebexpr >>>= \env b3 -> char ')' >>>= \env _ -> parserReturn env ( "(" ++ b3 ++ ")") ) +++
+             (char '!' >>>= \env _ -> parsebexpr >>>= \env b4 -> parserReturn env ("!"++ b4))
+
+-- Boolean expression made of boolean terms with And and Or operator
+parsebexpr :: Parser String
+parsebexpr = parsebterm >>>= \env b1 ->  
+                            (
+                                char '&' >>>= \env _ ->
+                                  parsebexpr >>>= \env b2 ->
+                                    parserReturn env ( b1 ++ "&" ++ b2)
+                            )                         
+                            +++
+                            (
+                                char '|' >>>= \env _ ->
+                                  parsebexpr >>>= \env b2 ->
+                                    parserReturn env (b1 ++ "|" ++ b2)
+                            )
+                            +++ parserReturn env b1
