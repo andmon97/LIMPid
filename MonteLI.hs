@@ -28,10 +28,10 @@ item            = \env inp -> case inp of
                             [] -> []
                             (x:xs) -> [(env, x, xs)]
 
--- "parseReturn" modify the environment after an assignment
+-- "parserReturn" modify the environment after an assignment
 -- return a Parser after sostituting the elements of the expression a and Env of the triple with the input values
-parseReturn          :: Env -> a -> Parser a
-parseReturn newenv v = \env inp -> [(newenv, v, inp)]
+parserReturn          :: Env -> a -> Parser a
+parserReturn newenv v = \env inp -> [(newenv, v, inp)]
 
 -- "failure" stops the parsing
 failure         :: Parser a
@@ -58,7 +58,7 @@ p +++ q         = \env inp -> case p env inp of
 sat             :: (Char -> Bool) -> Parser Char
 sat p           = item >>>= \env x ->
                     if p x then
-                        parseReturn env x
+                        parserReturn env x
                     else 
                         failure
 
@@ -119,68 +119,68 @@ getEnv [(x,_,_)]        = x
 
 -- Parse the "True" keyword
 trueKeyword     :: Parser String
-trueKeyword     = char 'T' >>>= \env _ -> char 'r' >>>= \_ _ -> char 'u' >>>= \_ _ -> char 'e' >>>= \_ _ -> parseReturn env ("True")
+trueKeyword     = char 'T' >>>= \env _ -> char 'r' >>>= \_ _ -> char 'u' >>>= \_ _ -> char 'e' >>>= \_ _ -> parserReturn env ("True")
 
 -- Parse the "False" keyword
 falseKeyword    :: Parser String
-falseKeyword    = char 'F' >>>= \env _ -> char 'a' >>>= \_ _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> parseReturn env ("False")
+falseKeyword    = char 'F' >>>= \env _ -> char 'a' >>>= \_ _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> parserReturn env ("False")
 
 -- Parse the "skip" keyword
 skipKeyword     :: Parser String
-skipKeyword     = char 's' >>>= \env _ -> char 'k' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'p' >>>= \_ _ -> parseReturn env ("skip")
+skipKeyword     = char 's' >>>= \env _ -> char 'k' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'p' >>>= \_ _ -> parserReturn env ("skip")
 
 -- Parse the "if" keyword
 ifKeyword       :: Parser String
-ifKeyword       = char 'i' >>>= \env _ -> char 'f' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("if ")
+ifKeyword       = char 'i' >>>= \env _ -> char 'f' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env ("if ")
 
 -- Parse the "else" keyword
 elseKeyword     :: Parser String
-elseKeyword     = char 'e' >>>= \env _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("else ")
+elseKeyword     = char 'e' >>>= \env _ -> char 'l' >>>= \_ _ -> char 's' >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env ("else ")
 
 -- Parse the "do" keyword
 doKeyword       :: Parser String
-doKeyword       = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("do ")
+doKeyword       = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env ("do ")
 
 -- Parse the "while" keyword
 whileKeyword    :: Parser String
-whileKeyword    = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'l'  >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parseReturn env ("while ")
+whileKeyword    = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _ -> char 'l'  >>>= \_ _ -> char 'e' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env ("while ")
 
 --      chars parsers
 -- Parse the opened pargraf
 openPargraf     :: Parser String 
-openPargraf     = char '{' >>>= \env _ -> space >>>= \_ _ -> parseReturn env ("{ ")
+openPargraf     = char '{' >>>= \env _ -> space >>>= \_ _ -> parserReturn env ("{ ")
 
 -- Parse the closed pargraf
 closePargraf   :: Parser String
-closePargraf   = char '}' >>>= \env _ -> parseReturn env ("}")
+closePargraf   = char '}' >>>= \env _ -> parserReturn env ("}")
 
 -- Parse the opened square parenth.
 openPar        :: Parser String 
-openPar        = char '(' >>>= \env _ -> parseReturn env (")")
+openPar        = char '(' >>>= \env _ -> parserReturn env (")")
 
 -- Parse the closed square parenth.
 closePar        :: Parser String 
-closePar        = char ')' >>>= \env _ -> space >>>= \_ _ -> parseReturn env (")")
+closePar        = char ')' >>>= \env _ -> space >>>= \_ _ -> parserReturn env (")")
 
 -- Parse the colon
 colon           :: Parser String
 colon           = char ',' >>>= \env _ ->
                                         (
                                             space >>>= \_ _ ->
-                                            parseReturn env ", "
+                                            parserReturn env ", "
                                         )
                                         +++
-                                        parseReturn env ","
+                                        parserReturn env ","
 
 -- Parse the semicolon
 semicolon       :: Parser String
 semicolon       = char ',' >>>= \env _ ->
                                         (
                                             space >>>= \_ _ ->
-                                            parseReturn env "; "
+                                            parserReturn env "; "
                                         )
                                         +++
-                                        parseReturn env ";"
+                                        parserReturn env ";"
 
 -- Parse the space character
 space           :: Parser Char
@@ -188,13 +188,15 @@ space           = char ' '
 
 -- Parse a string of spaces
 spaces          :: Parser String 
-spaces          = char ' ' >>>= \env _ -> parseReturn env " "
+spaces          = char ' ' >>>= \env _ -> parserReturn env " "
 
 
 
 -- _____________________________________________________________________________________________________________________________________--
 --                      SYNTAX PARSING
 -- _____________________________________________________________________________________________________________________________________--
+
+-- ARITHMETIC EXPRESSIONS
 
 -- Digit 0 - 9
 digit       :: Parser Char
@@ -205,10 +207,10 @@ variable    :: Parser String
 variable    = sat isLetter >>>= \env c ->
                                 ( 
                                     variable >>>= \env f ->
-                                        parseReturn env ([c] ++ f)
+                                        parserReturn env ([c] ++ f)
                                 )
                                 +++
-                                parseReturn env [c]
+                                parserReturn env [c]
 
 -- positive number made of one or more digits
 parsepositivenumber :: Parser String
@@ -220,7 +222,7 @@ parsepositivenumber = digit >>>= \env d -> (
                    
 -- Integer number or variable                        
 parsenumber :: Parser String
-parsenumber = parsepositivenumber  +++ (variable >>>= \env v -> parserReturn env [v]) -- substitutes the variables with their values
+parsenumber = parsepositivenumber  +++ (variable >>>= \env v -> parserReturn env v) -- substitutes the variables with their values
 
 -- Arithmetic positive factor made of integer numbers or arithmetic expression inside parentheses
 parseapositivefactor :: Parser String
