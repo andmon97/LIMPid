@@ -189,4 +189,23 @@ space           = char ' '
 -- Parse a string of spaces
 spaces          :: Parser String 
 spaces          = char ' ' >>>= \env _ -> parseReturn env " "
-                
+
+
+
+-- _____________________________________________________________________________________________________________________________________--
+--                      SYNTAX PARSING
+-- _____________________________________________________________________________________________________________________________________--
+
+-- Digit 0 - 9
+digit       :: Parser Char
+digit       = sat isDigit
+
+-- Variable
+variable    :: Parser String 
+variable    = sat isLetter >>>= \env c ->
+                                ( 
+                                    variable >>>= \env f ->
+                                        parseReturn env ([c] ++ f)
+                                )
+                                +++
+                                parseReturn env [c]
