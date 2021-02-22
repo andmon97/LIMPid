@@ -347,3 +347,64 @@ parsebexpr = parsebterm >>>= \env b1 ->
                                     parserReturn env (b1 ++ "|" ++ b2)
                             )
                             +++ parserReturn env b1
+
+-- COMMAND EXPRESSIONS
+-- assignment Command
+parseassignmentCommand :: Parser String
+parseassignmentCommand = variable >>>= \env v ->
+                        char ':' >>>= \env _ -> 
+                          char '=' >>>= \env _ -> 
+                            (
+                              parsebexpr >>>= \env b ->
+                                semicolon >>>= \env s ->   
+                                  parserReturn env (v ++ ":=" ++ b ++ s)
+                            ) +++
+                            (   
+                               parseaexpr >>>= \env a ->
+                                 semicolon >>>= \env s ->  
+                                  parserReturn env (v ++ ":=" ++ a ++ s)
+                            )
+
+-- if Command
+parseifCommand :: Parser String
+parseifCommand = ifKeyword >>>= \env i ->
+                   openPar >>>= \env op ->
+                     parsebexpr >>>= \env b -> 
+                       closePar >>>= \env cp ->
+                          openPargraf >>>= \env t ->
+                            parseprogram >>>= \env p1 -> 
+                              (                          
+                                 elseKeyword >>>= \env e ->
+                                   parseprogram >>>= \env p2 ->
+                                     closeParagraf >>>= \env ei ->
+                                      semicolon >>>= \env se -> 
+                                       parserReturn env (i ++ op ++ b ++ cp ++ t  ++ p1 ++ e ++ p2 ++ ei ++ se)
+                           ) +++
+                           ( 
+                              closeParagraf >>>= \env ei ->
+                              semicolon >>>= \env se ->  
+                              parserReturn env (i ++ op ++ b ++ cp ++ t  ++ p1 ++ ei ++ se)
+                           )
+
+-- While command
+parsewhileCommand :: Parser String
+parsewhileCommand = whileKeyword >>>= \env w ->
+                      openPar >>>= \env op ->
+                        parsebexpr >>>= \env b -> 
+                          closePar >>>= \env cp -> 
+                            openPargraf >>>= \env gr -> 
+                              doKeyword >>>= \env t1 -> 
+                                parseprogram >>>= \env p ->
+                                  closeParagraf >>>= \env ew ->
+                                  semicolon >>>= \env s -> 
+                                   parserReturn env (w ++ op ++ b ++ cp ++ gr ++ t1 ++ p ++ ew ++ s)
+                                 
+
+-- Command can be skip, assignment, if or while
+parsecommand :: Parser String
+parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand) >>>= \env c -> 
+                   parserReturn env c
+
+
+parseprogram :: Parser String
+parseprogram = parsecommand >>>= \env c -> ( parseprogram >>>= \env p -> parserReturn env (c ++ p)) +++ parserReturn env c
