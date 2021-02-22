@@ -209,3 +209,69 @@ variable    = sat isLetter >>>= \env c ->
                                 )
                                 +++
                                 parseReturn env [c]
+
+-- positive number made of one or more digits
+parsepositivenumber :: Parser String
+parsepositivenumber = digit >>>= \env d -> (
+                                      parsepositivenumber >>>= \env n ->
+                                        parserReturn env ([d]++n) 
+                                  ) 
+                                  +++ parserReturn env [d]
+                   
+-- Integer number or variable                        
+parsenumber :: Parser String
+parsenumber = parsepositivenumber  +++ (variable >>>= \env v -> parserReturn env [v]) -- substitutes the variables with their values
+
+-- Arithmetic positive factor made of integer numbers or arithmetic expression inside parentheses
+parseapositivefactor :: Parser String
+parseapositivefactor  = (parsenumber >>>= \env n ->
+                          parserReturn env n) 
+                        +++ 
+                        (char '(' >>>= \env _ ->
+                           parseaexpr >>>= \env e ->
+                             char ')' >>>= \env _ ->
+                               parserReturn env ("(" ++ e ++ ")")
+                        )
+                        
+-- Arithmetic negative factor made by negating positivefactor                                          
+parseanegativefactor :: Parser String
+parseanegativefactor = char '-' >>>= \env _ -> 
+                         parseapositivefactor >>>= \env f -> 
+                            parserReturn env ("-" ++ f)
+
+-- Arithmetic negative or positive factor                      
+parseafactor :: Parser String
+parseafactor = parseanegativefactor +++ parseapositivefactor 
+
+-- Arithmetic term made of arithmetic factors with moltiplication or division operator
+parseaterm :: Parser String
+parseaterm  = parseafactor >>>= \env f ->  
+                             (
+                                 char '*' >>>= \env _ ->
+                                   parseaterm >>>= \env t ->
+                                     parserReturn env (f ++ "*" ++ t)
+                             )
+                             +++
+                             (
+                                 char '/' >>>= \env _ ->
+                                   parseaterm >>>= \env t ->
+                                     parserReturn env (f ++ "/" ++ t)
+                             )
+                             +++ parserReturn env f 
+
+-- Arithmetic expression made of arithmetic term with sum or substitution operator
+parseaexpr :: Parser String
+parseaexpr  = parseaterm >>>= \env t -> 
+                          (
+                              char '+' >>>= \env _ ->
+                               parseaexpr >>>= \env e ->
+                                  parserReturn env (t ++ "+" ++ e)
+                          )
+                          +++
+                          (
+                              char '-' >>>= \env _ ->
+                                parseaexpr >>>= \env e ->
+                                  parserReturn env (t ++ "-" ++ e)
+                          )
+                          +++ parserReturn env t
+                          
