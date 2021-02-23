@@ -376,12 +376,12 @@ parseifCommand = ifKeyword >>>= \env i ->
                               (                          
                                  elseKeyword >>>= \env e ->
                                    parseprogram >>>= \env p2 ->
-                                     closeParagraf >>>= \env ei ->
+                                     closePargraf >>>= \env ei ->
                                       semicolon >>>= \env se -> 
                                        parserReturn env (i ++ op ++ b ++ cp ++ t  ++ p1 ++ e ++ p2 ++ ei ++ se)
                            ) +++
                            ( 
-                              closeParagraf >>>= \env ei ->
+                              closePargraf >>>= \env ei ->
                               semicolon >>>= \env se ->  
                               parserReturn env (i ++ op ++ b ++ cp ++ t  ++ p1 ++ ei ++ se)
                            )
@@ -395,7 +395,7 @@ parsewhileCommand = whileKeyword >>>= \env w ->
                             openPargraf >>>= \env gr -> 
                               doKeyword >>>= \env t1 -> 
                                 parseprogram >>>= \env p ->
-                                  closeParagraf >>>= \env ew ->
+                                  closePargraf >>>= \env ew ->
                                   semicolon >>>= \env s -> 
                                    parserReturn env (w ++ op ++ b ++ cp ++ gr ++ t1 ++ p ++ ew ++ s)
                                  
@@ -408,3 +408,84 @@ parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ p
 
 parseprogram :: Parser String
 parseprogram = parsecommand >>>= \env c -> ( parseprogram >>>= \env p -> parserReturn env (c ++ p)) +++ parserReturn env c
+
+
+
+-- _____________________________________________________________________________________________________________________________________--
+--                      EXPRESSION'S EVALUATION
+-- _____________________________________________________________________________________________________________________________________--
+
+-- Positive number are made of one or more digits
+positivenumber      :: Parser String
+positivenumber      = digit >>>= \env d ->
+                                (
+                                  positivenumber >>>= \env n ->
+                                    parserReturn env ([d] ++ n)
+                                )
+                                +++
+                                parserReturn env [d]
+
+-- Integer number or variable                        
+number              :: Parser String
+number              = positivenumber  +++ 
+                                    (
+                                      variable >>>= \env v -> 
+                                        parserReturn env (bind env v)
+                                    ) -- substitutes the variables with their values
+
+-- Arithmetic positive factor made of integer numbers or arithmetic expression inside parentheses
+apositivefactor     :: Parser Int 
+apositivefactor     = (
+                        number >>>= \env n -> 
+                          parserReturn env (read n :: Int )
+                      )
+                      +++
+                      (
+                        char '(' >>>= \env _ ->
+                          aexpr >>>= \env e ->
+                            char ')' >>>= \env _ ->
+                              parserReturn env e
+                      )
+
+-- Arithmetic negative factor made by negating positivefactor                                          
+anegativefactor     :: Parser Int 
+anegativefactor     = char '-' >>>= \env _ ->
+                        apositivefactor >>>= \env f ->
+                          parserReturn env (f * (-1))
+
+-- Arithmetic can be negative or positive factor                      
+afactor            :: Parser Int
+afactor            = anegativefactor +++ apositivefactor 
+
+-- Evaluation of the aexpr wich contains * or /
+aterm              :: Parser Int 
+aterm              = afactor >>>= \env f ->
+                                (
+                                  char '*' >>>= \env _ ->
+                                    aterm >>>= \env t ->
+                                      parserReturn env (f * t)  -- here operands can be applied because the values have been sobstituted by the bind
+                                )
+                                +++
+                                (
+                                  char '/' >>>= \env _ ->
+                                    aterm >>>= \env t ->
+                                      parserReturn env (fromIntegral (div f t))  -- fromintegral converts from integer to int
+                                )
+                                +++
+                                parserReturn env f
+
+aexpr               :: Parser Int 
+aexpr               = aterm >>>= \env t ->
+                                (
+                                  char '+' >>>= \env _ ->
+                                    aexpr >>>= \env e -> 
+                                      parserReturn env (t + e)
+                                )
+                                +++
+                                (
+                                  char '-' >>>= \env _ ->
+                                    aexpr >>>= \env e -> 
+                                      parserReturn env (t - e)
+                                )
+                                +++
+                                parserReturn env t
