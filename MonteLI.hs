@@ -415,6 +415,8 @@ parseprogram = parsecommand >>>= \env c -> ( parseprogram >>>= \env p -> parserR
 --                      EXPRESSION'S EVALUATION
 -- _____________________________________________________________________________________________________________________________________--
 
+-- ARITHMETIC EXPRESSIONS
+
 -- Positive number are made of one or more digits
 positivenumber      :: Parser String
 positivenumber      = digit >>>= \env d ->
@@ -489,3 +491,57 @@ aexpr               = aterm >>>= \env t ->
                                 )
                                 +++
                                 parserReturn env t
+
+-- BOOLEAN EXPRESSIONS
+
+-- Boolean factor made of Arithmetic expression combined by comparison operator                 
+bfactor             :: Parser Bool
+bfactor             = (aexpr >>>= \env a1 ->
+                                (
+                                  char '<' >>>= \env _ ->
+                                    aexpr >>>= \env a2 ->
+                                      parserReturn env (a1 < a2)
+                                )
+                                +++ 
+                                (
+                                  char '>' >>>= \env _ ->
+                                    aexpr >>>= \env a2 ->
+                                      parserReturn env (a1 > a2)
+                                )
+                                +++ 
+                                (
+                                  char '=' >>>= \env _ ->
+                                    aexpr >>>= \env a3 ->
+                                      parserReturn env (a1 == a3)
+                                )
+                                +++
+                                (
+                                  char '<' >>>= \env _ ->
+                                    char '=' >>>= \env _ ->
+                                      aexpr >>>= \env a2 ->
+                                        parserReturn env (a1 <= a2)
+                                )
+                                +++
+                                (
+                                  char '>' >>>= \env _ ->
+                                    char '=' >>>= \env _ ->
+                                      aexpr >>>= \env a2 ->
+                                        parserReturn env (a1 >= a2)
+                                )
+                                +++
+                                (
+                                  char '!' >>>= \env _ ->
+                                    char '=' >>>= \env _ ->
+                                      aexpr >>>= \env a2 ->
+                                        parserReturn env (a1 >= a2)
+                                )
+                      )
+                      +++
+                      (
+                        variable >>>= \env v ->
+                          if ((bind env[v])  == "True") || ((bind env[v])  == "False")
+                            then 
+                              parserReturn env (read (bind env [v]) :: Bool) -- To avoid a type missmatch substitutes the variables with their values and cast string in boolean 
+                            else
+                              failure
+                      )
