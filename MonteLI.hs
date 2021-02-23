@@ -545,3 +545,26 @@ bfactor             = (aexpr >>>= \env a1 ->
                             else
                               failure
                       )
+
+bterm :: Parser Bool
+bterm = 
+        ((trueKeyword +++ falseKeyword) >>>= \env b1 -> parserReturn env (read b1 :: Bool)) +++
+        (bfactor >>>= \env b2 -> parserReturn env b2) +++      
+        (char '(' >>>= \env _ -> bexpr >>>= \env b3 -> char ')' >>>= \env _ -> parserReturn env b3) +++
+        (char '!' >>>= \env _ -> bexpr >>>= \env b4 -> parserReturn env (not b4))
+
+bexpr             :: Parser Bool
+bexpr             = bterm >>>= \env b1 ->
+                              (
+                                char '&' >>>= \env _ ->
+                                  bexpr >>>= \env b2 ->
+                                    parserReturn env (b1 && b2)
+                              )
+                              +++
+                              (
+                                char '|' >>>= \env _ ->
+                                  bexpr >>>= \env b2 ->
+                                    parserReturn env (b1 || b2)
+                              )
+                              +++
+                              parserReturn env b1
