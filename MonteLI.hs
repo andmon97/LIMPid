@@ -576,3 +576,20 @@ skipCommand       :: Parser String
 skipCommand       = skipKeyword >>>= \env sk ->
                                     semicolon  >>>= \_ s ->
                                       parserReturn env (s ++ sk)
+
+-- Assignment command
+assignmentCommand :: Parser String
+assignmentCommand = (variable >>>= \env v->
+                                  char ':' >>>= \env _ ->
+                                    char '=' >>>= \env _ ->
+                                      (
+                                        bexpr >>>= \env b ->
+                                          semicolon >>>= \env s ->
+                                            parserReturn (setEnv v (show b) env) (v ++ ":=" ++ (show b) ++ s)
+                                      )
+                                      +++
+                                      (
+                                        aexpr >>>= \env a ->
+                                          semicolon >>>= \env s ->
+                                            parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
+                                      ))
