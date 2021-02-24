@@ -593,3 +593,42 @@ assignmentCommand = (variable >>>= \env v->
                                           semicolon >>>= \env s ->
                                             parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
                                       ))
+
+-- If command
+ifCommand         :: Parser String
+ifCommand         = ifKeyword >>>= \env i ->
+                      openPar >>>= \env op ->
+                        bexpr >>>= \env b ->
+                          closePar >>>= \env cp ->
+                            openPargraf >>>= \env t ->
+                              if b 
+                                then
+                                  program >>>= \envTrue p1 ->
+                                    (
+                                      elseKeyword >>>= \env e ->
+                                        parseprogram >>>= \env p2 ->
+                                          closePargraf >>>= \env ei ->
+                                            semicolon >>>= \env s ->
+                                              parserReturn envTrue (i ++ op ++ (show b) ++ cp ++ t ++ p1 ++ e ++ p2 ++ ei ++ s)
+                                    )
+                                    +++ --whithout else branch
+                                    (
+                                      closePargraf >>>= \env ei ->
+                                        semicolon >>>= \env s ->
+                                          parserReturn envTrue (i ++ op ++ (show b) ++ cp ++ t ++ p1 ++ ei ++ s)
+                                    )
+                                else
+                                  parseprogram >>>= \env p1 ->
+                                    (
+                                      elseKeyword >>>= \env e ->
+                                        program >>>= \envFalse p2 ->
+                                          closePargraf >>>= \env ei ->
+                                            semicolon >>>= \env s ->
+                                              parserReturn envFalse (i ++ op ++ (show b) ++ cp ++ t  ++ p1 ++ e ++ p2 ++ ei ++ s)
+                                    )
+                                    +++
+                                    (
+                                      closePargraf >>>= \env ei ->
+                                        semicolon >>>= \env s ->
+                                          parserReturn env (i ++ op ++ (show b) ++ cp ++ t ++ p1 ++ ei ++ s)
+                                    )
