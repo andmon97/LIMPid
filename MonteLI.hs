@@ -650,3 +650,17 @@ whileCommand        = whileKeyword >>>= \env w ->
                                               parserReturn (getEnv (parse program envw (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s))) (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s) -- re-execution of the same commands
                                           else
                                             parserReturn env (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s)
+
+-- Command can be skip, assignment, if, while, arithmetic expression or boolean expression
+command             :: Parser String
+command             = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand) >>>= \env c -> 
+                        parserReturn env c
+
+-- Program is a set of command or a single command
+program             :: Parser String
+program             = command >>>= \env c -> 
+                        (
+                          program >>>= \env p -> parserReturn env (c ++ p)
+                        ) 
+                        +++ 
+                        parserReturn env c
