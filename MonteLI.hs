@@ -539,9 +539,9 @@ bfactor             = (aexpr >>>= \env a1 ->
                       +++
                       (
                         variable >>>= \env v ->
-                          if ((bind env[v])  == "True") || ((bind env[v])  == "False")
+                          if ((bind env v)  == "True") || ((bind env v)  == "False")
                             then 
-                              parserReturn env (read (bind env [v]) :: Bool) -- To avoid a type missmatch substitutes the variables with their values and cast string in boolean 
+                              parserReturn env (read (bind env v) :: Bool) -- To avoid a type missmatch substitutes the variables with their values and cast string in boolean 
                             else
                               failure
                       )
@@ -568,3 +568,11 @@ bexpr             = bterm >>>= \env b1 ->
                               )
                               +++
                               parserReturn env b1
+
+--      COMMAND EXPRESSIONS
+
+-- Skip command is composed of skip keyword and semicolon
+skipCommand       :: Parser String
+skipCommand       = skipKeyword >>>= \env sk ->
+                                    semicolon  >>>= \_ s ->
+                                      parserReturn env (s ++ sk)
