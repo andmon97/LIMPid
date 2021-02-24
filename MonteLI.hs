@@ -632,3 +632,21 @@ ifCommand         = ifKeyword >>>= \env i ->
                                         semicolon >>>= \env s ->
                                           parserReturn env (i ++ op ++ (show b) ++ cp ++ t ++ p1 ++ ei ++ s)
                                     )
+
+-- While command
+whileCommand        :: Parser String
+whileCommand        = whileKeyword >>>= \env w ->
+                        openPar >>>= \env op ->
+                          parsebexpr >>>= \env b ->
+                            closePar >>>= \env cp ->
+                              openPargraf >>>= \env ogr ->
+                                doKeyword >>>= \env t1 ->
+                                  parseprogram >>>= \env p ->
+                                    closePargraf >>>= \env cgr ->
+                                      semicolon >>>= \env s ->
+                                        if (getCode (parse bexpr env b)) -- the bexpr is re-evaluated every cicle 
+                                          then 
+                                            parserReturn (getEnv (parse program env p)) p >>>= \envw _ -> -- execution of the p program inside the while
+                                              parserReturn (getEnv (parse program envw (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s))) (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s) -- re-execution of the same commands
+                                          else
+                                            parserReturn env (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s)
