@@ -664,3 +664,44 @@ program             = command >>>= \env c ->
                         ) 
                         +++ 
                         parserReturn env c
+
+
+
+-- +++++++++++++++++++++++++++  INTERACTIVE SHELL +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+parser  :: String -> IO String
+parser xs =
+    do
+      putStr "MonteLI#>"
+      hFlush stdout -- flushes all the buffered output data
+      ys <- getLine 
+      case ys of
+        ":mem" ->
+          do 
+            -- here code parsing and memory situation
+            parser xs
+        
+        ":MonteLIsyntax" ->
+          do 
+            -- here output the formal grammar
+            parser xs
+        
+        ":help" ->
+          do
+            -- here the Help section whith the explanations of the possible commands
+            parser xs
+        
+        ":quit" ->
+          do
+            -- quit from the interpeter's shell
+            return []
+        
+        otherwise ->
+          -- Error situation (input in the shell is not a valid command)
+          case parse parseprogram [] ys of
+            [] ->
+              do
+                putStrLn "Syntax error! Please type \":help\""
+                parser xs
+            otherwise -> parser (xs ++ ys)
+            
