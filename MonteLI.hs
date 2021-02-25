@@ -704,4 +704,19 @@ parser xs =
                 putStrLn "Syntax error! Please type \":help\""
                 parser xs
             otherwise -> parser (xs ++ ys)
-            
+
+
+
+-- Call this functions to start the program (the Interpreter)
+monteLI :: IO String
+monteLI = do
+            putStrLn ""
+            putStrLn ""
+            putStrLn ""
+            putStrLn ""
+            putStrLn "-+-+-+-+-+- MONTEMURRO Language Interpreter -+-+-+-+-+-"
+            putStrLn ""
+            putStrLn "Type \":help\" for commands"
+            putStrLn ""
+            putStrLn ""
+            parser []
