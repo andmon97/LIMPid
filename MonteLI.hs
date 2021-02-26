@@ -400,11 +400,25 @@ parsewhileCommand = whileKeyword >>>= \env w ->
                                   closePargraf >>>= \env ew ->
                                   semicolon >>>= \env s -> 
                                    parserReturn env (w ++ op ++ b ++ cp ++ gr ++ t1 ++ p ++ ew ++ s)
+
+-- Do While command
+parserdowhileCommand  :: Parser String
+parserdowhileCommand  = doKeyword >>>= \env d ->
+                          openPargraf >>>= \env opg ->
+                            parseprogram >>>= \env p ->
+                              closePargraf >>>= \env cpg ->
+                                whileKeyword >>>= \env w ->
+                                  openPar >>>= \env op ->
+                                    parsebexpr >>>= \env b ->
+                                      closePar >>>= \env cp ->
+                                        semicolon >>>= \env s ->
+                                          parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
+
                                  
 
 -- Command can be skip, assignment, if or while
 parsecommand :: Parser String
-parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand) >>>= \env c -> 
+parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand +++ parserdowhileCommand) >>>= \env c -> 
                    parserReturn env c
 
 
@@ -653,9 +667,27 @@ whileCommand        = whileKeyword >>>= \env w ->
                                           else
                                             parserReturn env (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s)
 
+-- Do While command parserReturn env (d ++ opg ++ p ++ cpg ++ op ++ b ++ cp ++ s)
+dowhileCommand  :: Parser String
+dowhileCommand  = doKeyword >>>= \env d ->
+                          openPargraf >>>= \env opg ->
+                            parseprogram >>>= \env p ->
+                              closePargraf >>>= \env cpg ->
+                                whileKeyword >>>= \env w ->
+                                  openPar >>>= \env op ->
+                                    parsebexpr >>>= \env b ->
+                                      closePar >>>= \env cp ->
+                                        semicolon >>>= \env s ->
+                                          parserReturn (getEnv (parse program env p)) p >>>= \envw _ -> -- execution of the p program inside the do - block
+                                            if (getCode (parse bexpr env b)) -- the bexpr is re-evaluated every cicle 
+                                              then
+                                                parserReturn (getEnv (parse program envw (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s))) (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
+                                              else
+                                                parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
+
 -- Command can be skip, assignment, if, while, arithmetic expression or boolean expression
 command             :: Parser String
-command             = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand) >>>= \env c -> 
+command             = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand +++ dowhileCommand) >>>= \env c -> 
                         parserReturn env c
 
 -- Program is a set of command or a single command
@@ -704,6 +736,7 @@ parser xs =
             putStrLn  "  assignmentcommand ::= <variable> := (<aexp> | <bexp>) <semicolon>"
             putStrLn  "  ifcommand ::= if <space> ( <bexp> ) <space> { <space> (<program> | <program> else <space> <program>) } <semicolon>"
             putStrLn  "  whilecommand ::= while <space> ( <bexp> ) <space> { <space> do <space> <program>  <space> } <semicolon>"
+            putStrLn  "  dowhilecommand ::= do <space> { <space> <program>  <space> }while <space> ( <bexp> ) <semicolon>"
             putStrLn  "  bexp ::= <bterm> | <bterm> <bexpOp> <bexp>"
             putStrLn  "  bterm ::= <bfactor> | ( <bexp> ) | ! <bexp>"
             putStrLn  "  bfactor ::= <aexp> | <aexp> <comparisonOp> <aexp> | <variable>"
