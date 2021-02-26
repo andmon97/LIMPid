@@ -676,19 +676,66 @@ parser xs =
       hFlush stdout -- flushes all the buffered output data
       ys <- getLine 
       case ys of
-        ":mem" ->
+        ":printmem" ->
           do 
             -- here code parsing and memory situation
+            putStrLn ""
+            putStrLn "-+-+ Parsed Code +-+-"
+            if xs == [] then
+              putStrLn ""
+            else
+              putStrLn (getCode (parse parseprogram [] xs))
+            putStrLn ""
+            putStrLn "-+-+ Memory +-+-"
+            putStrLn (getMemory (parse program [] xs))
+            putStrLn ""
             parser xs
         
-        ":MonteLIsyntax" ->
+        ":syntax" ->
           do 
             -- here output the formal grammar
+            putStrLn "-+-+ MonteLI Syntax +-+-"
+            putStrLn ""
+            putStrLn  "  program := <command> | <command> <program>"
+            putStrLn  "  command ::= <skipcommand> | <assignmentcommand> | <ifcommand> | <whilecommand>"
+            putStrLn  "  skipcommand ::= skip <semicolon>"
+            putStrLn  "  assignmentcommand ::= <variable> := (<aexp> | <bexp>) <semicolon>"
+            putStrLn  "  ifcommand ::= if <space> ( <bexp> ) <space> { <space> (<program> | <program> else <space> <program>) } <semicolon>"
+            putStrLn  "  whilecommand ::= while <space> ( <bexp> ) <space> { <space> do <space> <program>  <space> } <semicolon>"
+            putStrLn  "  bexp ::= <bterm> | <bterm> <bexpOp> <bexp>"
+            putStrLn  "  bterm ::= <bfactor> | ( <bexp> ) | ! <bexp>"
+            putStrLn  "  bfactor ::= <aexp> | <aexp> <comparisonOp> <aexp> | <variable>"
+            putStrLn  "  aexpr ::= <aterm> | <aterm> <aexpOp1> <aexp>"
+            putStrLn  "  aterm ::= <afactor> | <afactor> <aexpOp2> <aterm>"
+            putStrLn  "  afactor ::= <apositivefactor> | <anegativefactor>"
+            putStrLn  "  anegativefactor ::= - | <apositivefactor>"
+            putStrLn  "  apositivefactor ::= <number> | ( <aexp> )"
+            putStrLn  "  number ::= <positivenumber> | <variable>"
+            putStrLn  "  positivenumber ::= <digit> | <digit> <positivenumber>"
+            putStrLn  "  variable ::= <letter> | <letter> <variabile>"
+            putStrLn  "  semicolon ::= ; | ; <space>"
+            putStrLn  "  digit ::= 0-9"
+            putStrLn  "  aexpOp1 ::= + | -"
+            putStrLn  "  aexpOp2 ::=  * | /"
+            putStrLn  "  bexpOp ::= & | |"
+            putStrLn  "  comparisonOp ::= < | > | = | <= | >= | !="
+            putStrLn  "  letter ::= a-z"
+            putStrLn  "  space ::= \" \" "
             parser xs
         
         ":help" ->
           do
             -- here the Help section whith the explanations of the possible commands
+            putStrLn "-+-+ MonteLI Help +-+-"
+            putStrLn  ""
+            putStrLn  "  :printmem      prints the parsed code and the status of the memory"
+            putStrLn  ""
+            putStrLn  "  :syntax        prints the MonteLI formal grammar"
+            putStrLn  ""
+            putStrLn  "  :help          prints the help with the commands of the program"
+            putStrLn  ""
+            putStrLn  "  :quit          stops the MonteLI program"
+            putStrLn  ""
             parser xs
         
         ":quit" ->
