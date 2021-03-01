@@ -215,7 +215,7 @@ variable    = sat isLetter >>>= \env c ->
                                   char '[' >>>= \env op ->
                                     variable >>>= \env v ->
                                       char ']' >>>= \env cl ->
-                                        parserReturn env ([c] ++ "[" ++ bind env v ++ "]") -- in case array[var] we have to sobstitute the value of var (dimension of array) with the use of bind funct.
+                                        parserReturn env ([c] ++ "[" ++ bind env v ++ "]") -- in case array[var] we have to sobstitute the value var (dimension of array) in the env by using  bind funct.
                                 )
                                 +++
                                 (
@@ -372,18 +372,38 @@ parsebexpr = parsebterm >>>= \env b1 ->
 -- assignment Command
 parseassignmentCommand :: Parser String
 parseassignmentCommand = variable >>>= \env v ->
-                        char ':' >>>= \env _ -> 
-                          char '=' >>>= \env _ -> 
-                            (
-                              parsebexpr >>>= \env b ->
-                                semicolon >>>= \env s ->   
-                                  parserReturn env (v ++ ":=" ++ b ++ s)
-                            ) +++
-                            (   
-                               parseaexpr >>>= \env a ->
-                                 semicolon >>>= \env s ->  
-                                  parserReturn env (v ++ ":=" ++ a ++ s)
-                            )
+                          char ':' >>>= \env _ -> 
+                            char '=' >>>= \env _ -> 
+                              (
+                                parsebexpr >>>= \env b ->
+                                  semicolon >>>= \env s ->   
+                                    parserReturn env (v ++ ":=" ++ b ++ s)
+                              ) 
+                              +++
+                              (   
+                                parseaexpr >>>= \env a ->
+                                  semicolon >>>= \env s ->  
+                                    parserReturn env (v ++ ":=" ++ a ++ s)
+                              )
+                              +++
+                              ( --parse the array explicit declaration
+                                char '{' >>>= \env opg ->  
+                                  parsearray >>>= \env arr -> --this function is defined after the parser of the assignment command
+                                    char '}' >>>= \env cpg ->
+                                      semicolon >>>= \env s ->
+                                        parserReturn env (v ++ ":=" ++ [opg] ++ arr ++ [cpg] ++ s)
+                              )
+
+-- Parses the array elements when an array is explicit declared as a sequence of factors
+parsearray :: Parser String                
+parsearray =  parseafactor >>>= \env f -> 
+               (  
+                  colon >>>= \env c ->    
+                  parsearray >>>= \env a ->  
+                  parserReturn env (f ++ c ++ a)
+               )
+               +++
+               parserReturn env f  
 
 -- if Command
 parseifCommand :: Parser String
