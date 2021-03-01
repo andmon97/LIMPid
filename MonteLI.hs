@@ -215,7 +215,14 @@ variable    = sat isLetter >>>= \env c ->
                                   char '[' >>>= \env op ->
                                     variable >>>= \env v ->
                                       char ']' >>>= \env cl ->
-                                        parserReturn env ([c] ++ "[" ++ bind env v ++ "]")
+                                        parserReturn env ([c] ++ "[" ++ bind env v ++ "]") -- in case array[var] we have to sobstitute the value of var (dimension of array) with the use of bind funct.
+                                )
+                                +++
+                                (
+                                  char '[' >>>= \env op ->
+                                    parsenumber >>>= \env num ->
+                                      char ']' >>>= \env cl ->
+                                        parserReturn env ([c] ++ "[" ++ num ++ "]") -- in case array[n] we just have to parse the array with the dimension (parsenumber)
                                 )
                                 +++
                                 ( 
