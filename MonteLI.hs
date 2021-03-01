@@ -155,11 +155,11 @@ forKeyword = char 'f' >>>= \env _ -> char 'o'  >>>= \_ _ -> char 'r' >>>= \_ _ -
 --      chars parsers
 -- Parse the opened graf parentheses
 openPargraf :: Parser String
-openPargraf   = char '{' >>>= \env _ -> space >>>= \_ _ -> parserReturn env ("{ ")--
+openPargraf   = char '{' >>>= \env _ -> space >>>= \_ _ -> parserReturn env ("{ ")
 
 -- Parse the closed graf parentheses
 closePargraf :: Parser String
-closePargraf   = char '}' >>>= \env _ ->  parserReturn env ("}")  --                                         
+closePargraf   = char '}' >>>= \env _ ->  parserReturn env ("}")                                           
 
 -- Parse open square parenthesis (with a possible space prefix)
 openPar :: Parser String
@@ -632,20 +632,47 @@ skipCommand       = skipKeyword >>>= \env sk ->
 
 -- Assignment command
 assignmentCommand :: Parser String
-assignmentCommand = (variable >>>= \env v->
-                                  char ':' >>>= \env _ ->
-                                    char '=' >>>= \env _ ->
-                                      (
-                                        bexpr >>>= \env b ->
-                                          semicolon >>>= \env s ->
-                                            parserReturn (setEnv v (show b) env) (v ++ ":=" ++ (show b) ++ s)
-                                      )
-                                      +++
-                                      (
-                                        aexpr >>>= \env a ->
-                                          semicolon >>>= \env s ->
-                                            parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
-                                      ))
+assignmentCommand = variable >>>= \env v->
+                      char ':' >>>= \env _ ->
+                        char '=' >>>= \env _ ->
+                          (
+                            bexpr >>>= \env b ->
+                              semicolon >>>= \env s ->
+                              parserReturn (setEnv v (show b) env) (v ++ ":=" ++ (show b) ++ s)
+                          )
+                          +++
+                          (
+                            aexpr >>>= \env a ->
+                              semicolon >>>= \env s ->
+                                parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
+                          )
+                          +++
+                          (
+                            char '{' >>>= \env opg ->
+                              arrayelements >>>= \env elements ->
+                                char '}' >>>= \env cpg ->
+                                  semicolon >>>= \env s ->
+                                    parserReturn (saveArray env v elements ) (v ++ ":=" ++ [opg] ++ (show elements) ++ [cpg] ++ s)
+                          )
+
+-- "arrayelements" first parses the elements of the array and create a list 
+-- The functions for saving arrays are arrayelements and saveArray. The first,returns an [int] list 
+-- from the parsing of the elements, taken as a parameter by savearray with the env and the variable, 
+-- to save the single elements in the env, i.e. y:={2,5}; -> y[0]:=2; y[1]:=5;
+arrayelements   ::  Parser [Int]
+arrayelements   =   afactor  >>>= \env element -> 
+                    (
+                      colon >>>= \env c ->
+                        arrayelements >>>= \env elements ->
+                          parserReturn env ([element] ++ elements)
+                    )
+                    +++ 
+                    parserReturn env [element]
+
+saveArray               :: Env -> String -> [Int] -> Env
+saveArray env var list  =  foldl (\e v -> setEnv (fst v) (snd v) e) env l 
+                            where l = zipWith (\val index -> (var ++ "[" ++ (show index) ++ "]", show (val) )) list [0..] 
+                    
 
 -- If command
 ifCommand         :: Parser String
