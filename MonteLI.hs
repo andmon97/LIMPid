@@ -147,6 +147,10 @@ whileKeyword  = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _
 -- Parse the "do" keyword                    
 doKeyword :: Parser String
 doKeyword  = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env "do "
+
+-- Parse the "for" keyword
+forKeyword :: Parser String
+forKeyword = char 'f' >>>= \env _ -> char 'o'  >>>= \_ _ -> char 'r' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env "for "
                         
 --      chars parsers
 -- Parse the opened graf parentheses
@@ -179,7 +183,7 @@ semicolon :: Parser String
 semicolon = char ';' >>>= \env _ -> 
               (
               space >>>= \_ _ -> 
-              parserReturn env "; "--
+              parserReturn env "; "
               ) +++
               parserReturn env ";"
 
@@ -207,6 +211,13 @@ digit       = sat isDigit
 -- Variable
 variable    :: Parser String 
 variable    = sat isLetter >>>= \env c ->
+                                (
+                                  char '[' >>>= \env op ->
+                                    variable >>>= \env v ->
+                                      char ']' >>>= \env cl ->
+                                        parserReturn env ([c] ++ "[" ++ bind env v ++ "]")
+                                )
+                                +++
                                 ( 
                                     variable >>>= \env f ->
                                         parserReturn env ([c] ++ f)
@@ -402,8 +413,8 @@ parsewhileCommand = whileKeyword >>>= \env w ->
                                    parserReturn env (w ++ op ++ b ++ cp ++ gr ++ t1 ++ p ++ ew ++ s)
 
 -- Do While command
-parserdowhileCommand  :: Parser String
-parserdowhileCommand  = doKeyword >>>= \env d ->
+parsedowhileCommand  :: Parser String
+parsedowhileCommand  = doKeyword >>>= \env d ->
                           openPargraf >>>= \env opg ->
                             parseprogram >>>= \env p ->
                               closePargraf >>>= \env cpg ->
@@ -414,11 +425,10 @@ parserdowhileCommand  = doKeyword >>>= \env d ->
                                         semicolon >>>= \env s ->
                                           parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
 
-                                 
 
 -- Command can be skip, assignment, if or while
 parsecommand :: Parser String
-parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand +++ parserdowhileCommand) >>>= \env c -> 
+parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand +++ parsedowhileCommand) >>>= \env c -> 
                    parserReturn env c
 
 
@@ -684,7 +694,7 @@ dowhileCommand  = doKeyword >>>= \env d ->
                                                 parserReturn (getEnv (parse program envw (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s))) (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
                                               else
                                                 parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
-
+ 
 -- Command can be skip, assignment, if, while, arithmetic expression or boolean expression
 command             :: Parser String
 command             = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand +++ dowhileCommand) >>>= \env c -> 
