@@ -1,5 +1,5 @@
 # MonteLI
-A simple Language Interpreter of the IMP language, written in Haskell, for didactic purposes. This work is part of the "Formal Methods in Computer Science" exam at University of Bari "Aldo Moro".
+A simple language interpreter of the IMP Language, written in Haskell, for didactic purposes. This work is part of the "Formal Methods in Computer Science" exam at University of Bari "Aldo Moro".
 
 ## Grammar
 ```EBNF
