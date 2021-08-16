@@ -148,9 +148,17 @@ whileKeyword  = char 'w' >>>= \env _ -> char 'h' >>>= \_ _ -> char 'i' >>>= \_ _
 doKeyword :: Parser String
 doKeyword  = char 'd' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env "do "
 
--- Parse the "for" keyword
+-- Parse the "for" keyword                        
 forKeyword :: Parser String
-forKeyword = char 'f' >>>= \env _ -> char 'o'  >>>= \_ _ -> char 'r' >>>= \_ _ -> space >>>= \_ _ -> parserReturn env "for "
+forKeyword  = char 'f' >>>= \env _ -> char 'o' >>>= \_ _ -> char 'r' >>>= \_ _ -> space >>>= \_ s -> parserReturn env "for "
+
+-- Parse the "to" keyword                        
+toKeyword :: Parser String
+toKeyword  = space >>>= \_ s -> char 't' >>>= \env _ -> char 'o' >>>= \_ _ -> space >>>= \_ s -> parserReturn env " to "
+
+-- Parse the "times" keyword
+timesKeyword :: Parser String
+timesKeyword  = space >>>= \_ s -> char 't' >>>= \env _ -> char 'i' >>>= \_ _ -> char 'm' >>>= \_ _ -> char 'e' >>>= \_ _ -> char 's' >>>= \_ _ -> space >>>= \_ s -> parserReturn env " times "
                         
 --      chars parsers
 -- Parse the opened graf parentheses
@@ -396,14 +404,14 @@ parseassignmentCommand = variable >>>= \env v ->
 
 -- Parses the array elements when an array is explicit declared as a sequence of factors
 parsearray :: Parser String                
-parsearray =  parseafactor >>>= \env f -> 
+parsearray =  parseafactor >>>= \env n -> 
                (  
                   colon >>>= \env c ->    
-                  parsearray >>>= \env a ->  
-                  parserReturn env (f ++ c ++ a)
+                  parsearray >>>= \env f ->  
+                  parserReturn env (n ++ c ++ f)
                )
                +++
-               parserReturn env f  
+               parserReturn env (n)  
 
 -- if Command
 parseifCommand :: Parser String
@@ -452,10 +460,21 @@ parsedowhileCommand  = doKeyword >>>= \env d ->
                                         semicolon >>>= \env s ->
                                           parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
 
+-- For Times command
+parseforCommand :: Parser String
+parseforCommand = forKeyword >>>= \env f ->
+                    variable >>>= \env v ->
+                      timesKeyword >>>=  \env t ->
+                          openPargraf >>>= \env op ->
+                            parseprogram >>>= \env p ->
+                              closePargraf >>>= \env cp ->
+                                semicolon >>>= \env s ->
+                                  parserReturn env (f ++ v ++ t ++ op ++ p ++ cp ++ s) 
 
--- Command can be skip, assignment, if or while
+
+-- Command can be skip, assignment, if, while, do while or for times 
 parsecommand :: Parser String
-parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand +++ parsedowhileCommand) >>>= \env c -> 
+parsecommand = (skipCommand +++ parseassignmentCommand  +++ parseifCommand +++ parsewhileCommand +++ parsedowhileCommand +++ parseforCommand) >>>= \env c -> 
                    parserReturn env c
 
 
@@ -630,48 +649,78 @@ skipCommand       = skipKeyword >>>= \env sk ->
                                     semicolon  >>>= \_ s ->
                                       parserReturn env (s ++ sk)
 
--- Assignment command
+-- This function recognizes the assignment command, in particular the variable
+-- and the assigned value (integer or Boolean), and also the assigment to an element of an array. 
 assignmentCommand :: Parser String
-assignmentCommand = variable >>>= \env v->
-                      char ':' >>>= \env _ ->
-                        char '=' >>>= \env _ ->
-                          (
-                            bexpr >>>= \env b ->
-                              semicolon >>>= \env s ->
-                              parserReturn (setEnv v (show b) env) (v ++ ":=" ++ (show b) ++ s)
-                          )
-                          +++
-                          (
-                            aexpr >>>= \env a ->
-                              semicolon >>>= \env s ->
-                                parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
-                          )
-                          +++
-                          (
-                            char '{' >>>= \env opg ->
-                              arrayelements >>>= \env elements ->
-                                char '}' >>>= \env cpg ->
-                                  semicolon >>>= \env s ->
-                                    parserReturn (saveArray env v elements ) (v ++ ":=" ++ [opg] ++ (show elements) ++ [cpg] ++ s)
-                          )
+assignmentCommand = (variable >>>= \env v ->
+                        char ':' >>>= \env _ -> 
+                          char '=' >>>= \env _ -> 
+                            (
+                              bexpr >>>= \env b ->  
+                                semicolon >>>= \env s -> 
+                                  parserReturn (setEnv v (show b) env) (v ++ ":=" ++ (show b) ++ s)
+                            ) 
+                            +++
+                            (  
+                               aexpr >>>= \env a -> 
+                                 semicolon >>>= \env s -> 
+                                  parserReturn (setEnv v (show a) env) (v ++ ":=" ++ (show a) ++ s)
+                            ))
+                            +++
+                            (sat isLetter >>>= \env v ->
+                             char ':' >>>= \env _ -> 
+                             char '=' >>>= \env _ -> 
+                             char '{' >>>= \env op ->
+                             arrayType  >>>= \env ar ->
+                             char '}' >>>= \env cp ->  
+                             semicolon >>>= \env s ->  
+                             parserReturn (saveArray env [v] ar ) ([v] ++ ":=" ++ [op] ++ (show ar) ++ [cp] ++ s)
+                            )
 
--- "arrayelements" first parses the elements of the array and create a list 
--- The functions for saving arrays are arrayelements and saveArray. The first,returns an [int] list 
+-- The functions for saving arrays are arrayType and saveArray. The first, arrayType returns an [int] list 
 -- from the parsing of the elements, taken as a parameter by savearray with the env and the variable, 
 -- to save the single elements in the env, i.e. y:={2,5}; -> y[0]:=2; y[1]:=5;
-arrayelements   ::  Parser [Int]
-arrayelements   =   afactor  >>>= \env element -> 
-                    (
-                      colon >>>= \env c ->
-                        arrayelements >>>= \env elements ->
-                          parserReturn env ([element] ++ elements)
-                    )
-                    +++ 
-                    parserReturn env [element]
+arrayType ::  Parser [Int]
+arrayType  = afactor  >>>= \env n -> 
+                (
+                   colon >>>= \env c ->
+                     arrayType >>>= \env f ->
+                       parserReturn env ([n] ++ f)
+                  )
+                   +++ 
+                   parserReturn env [n]
 
-saveArray               :: Env -> String -> [Int] -> Env
-saveArray env var list  =  foldl (\e v -> setEnv (fst v) (snd v) e) env l 
-                            where l = zipWith (\val index -> (var ++ "[" ++ (show index) ++ "]", show (val) )) list [0..] 
+saveArray :: Env -> String -> [Int] -> Env
+saveArray env var list = foldl (\e v -> setEnv (fst v) (snd v) e) env l  
+                         where l = zipWith (\val index -> 
+                                  (var ++ "[" ++ (show index) ++ "]", show (val) )) list [0..] 
+                              
+-- For the For statement, MLI first evaluates the value of the variable that represents the number of iterations of the program that will be execute, 
+-- then parses the program (parseprogram) without its  evaluation and computes the function repeatNTimes
+forCommand :: Parser String
+forCommand = forKeyword >>>= \env f ->  
+              variable >>>= \env v ->
+                timesKeyword >>>= \env t ->
+                    openPargraf >>>= \env op ->
+                      parseprogram >>>= \env p ->
+                        repeatNTimes env p v >>>= \env r ->
+                          closePargraf >>>= \env cp ->
+                            semicolon >>>= \env s ->
+                            parserReturn env (f ++ v ++ t ++ op ++ r ++ cp ++ s)
+
+-- RepeatNTimes accepts as parameters the env with the variable for the iteration evaluated 
+-- and the program parsed but not executed.
+-- So, if there are not iteration to be executed (the variable is zero or a negative number), 
+-- then MLI leaves the program only parsed and not evaluated.
+
+repeatNTimes :: Env -> String -> String  -> Parser String
+repeatNTimes env p v = if bind env v <= "0" then -- Condition is evaluated at each iteration of the for statement
+                              parserReturn env p
+                          else 
+                            parserReturn env (v ++ ":=" ++ v ++ "-" ++ "1" ++ ";") >>>= \env dec->     -- decremented for the executed iteration
+                                parserReturn  (getEnv (parse program env dec)) dec  >>>= \envdec _ -> 
+                                  parserReturn (getEnv (parse program envdec p)) p >>>= \envf _ -> 
+                                    repeatNTimes envf p v -- executes again the for with the new environment
                     
 
 -- If command
@@ -749,19 +798,14 @@ dowhileCommand  = doKeyword >>>= \env d ->
                                               else
                                                 parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
  
--- Command can be skip, assignment, if, while, arithmetic expression or boolean expression
-command             :: Parser String
-command             = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand +++ dowhileCommand) >>>= \env c -> 
-                        parserReturn env c
+-- Command can be skip, assignment, if, while, for, arithmetic expression or boolean expression
+command :: Parser String
+command = (skipCommand +++ assignmentCommand  +++ ifCommand +++ whileCommand +++ forCommand +++ dowhileCommand) >>>= \env c -> 
+                   parserReturn env c
 
 -- Program is a set of command or a single command
-program             :: Parser String
-program             = command >>>= \env c -> 
-                        (
-                          program >>>= \env p -> parserReturn env (c ++ p)
-                        ) 
-                        +++ 
-                        parserReturn env c
+program :: Parser String
+program = command >>>= \env c -> ( program >>>= \env p -> parserReturn env (c ++ p)) +++ parserReturn env c
 
 
 
@@ -801,7 +845,8 @@ parser xs =
             putStrLn  "  array ::= <afactor> | <afactor> <colon> <array> "
             putStrLn  "  ifcommand ::= if <space> ( <bexp> ) <space> { <space> (<program> | <program> else <space> <program>) } <semicolon>"
             putStrLn  "  whilecommand ::= while <space> ( <bexp> ) <space> { <space> do <space> <program>  <space> } <semicolon>"
-            putStrLn  "  dowhilecommand ::= do <space> { <space> <program>  <space> }while <space> ( <bexp> ) <semicolon>"
+            putStrLn  "  dowhilecommand ::= do <space> { <space> do <space> <program> <space> } while <space> ( <bexp> ) <space> <semicolon>"
+            putStrLn  "  forcommand ::= for <space> <variable> <space> times <space> { <space> <program> <space> } "
             putStrLn  "  bexp ::= <bterm> | <bterm> <bexpOp> <bexp>"
             putStrLn  "  bterm ::= <bfactor> | ( <bexp> ) | ! <bexp>"
             putStrLn  "  bfactor ::= <aexp> | <aexp> <comparisonOp> <aexp> | <variable>"
@@ -812,7 +857,8 @@ parser xs =
             putStrLn  "  apositivefactor ::= <number> | ( <aexp> )"
             putStrLn  "  number ::= <positivenumber> | <variable>"
             putStrLn  "  positivenumber ::= <digit> | <digit> <positivenumber>"
-            putStrLn  "  variable ::= <letter> | <letter> <variabile>"
+            putStrLn  "  variable ::= <letter> | <letter> <variabile> | <vet>"
+            putStrLn  "  vet ::= <letter>[ <number> ]     "
             putStrLn  "  semicolon ::= ; | ; <space>"
             putStrLn  "  digit ::= 0-9"
             putStrLn  "  aexpOp1 ::= + | -"
@@ -821,7 +867,7 @@ parser xs =
             putStrLn  "  comparisonOp ::= < | > | = | <= | >= | !="
             putStrLn  "  letter ::= a-z"
             putStrLn  "  space ::= \" \" "
-            parser xs
+            parser (xs)
         
         ":help" ->
           do
