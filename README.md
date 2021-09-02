@@ -8,9 +8,9 @@ MonteLI is an interpreter (with a parser) of an IMP language composed of some co
 - **skip** performs a jump to the next instruction;
 - **assignment** assigns a value to a variable by calculating it if it is written in the form of an expression;
 - **If-then-else** conditional control structure;
-- **Do-while** iterative control structure of the do-while type
+- **Do-while** iterative control structure of the do-while type;
 - **While-do** iterative control structure of the while-do type;
-- **For** iterative control structure of the for type;
+- **For-times** iterative control structure of the for type;
 
 *MonteLI* uses dynamic typization, accepts integer and Boolean data.
 
