@@ -15,7 +15,7 @@ getCh           = do hSetEcho stdin False
 type Env    =   [(String, String)]
 
 -- Definition of the Parser: in input there are the Environment and the input string, and in output a triple
--- wich contains the Envoingment, the elaboration of the input and the rest of the input.
+-- wich contains the Envoironment, the elaboration of the input and the rest of the input.
 type Parser a = Env -> String -> [(Env, a, String)]
 
 
@@ -69,7 +69,7 @@ char x = sat (x ==)
 
 
 -- _____________________________________________________________________________________________________________________________________--
---                  UTILITIES FUNCTIONS                     --
+--                  ENVIRONMENT MANIPULATIONS                     --
 -- _____________________________________________________________________________________________________________________________________--
 {- "setEnv" sets the environment adding or sobstituting a couple var-val
 - v is the NAME of the variable
@@ -169,11 +169,11 @@ openPargraf   = char '{' >>>= \env _ -> space >>>= \_ _ -> parserReturn env ("{ 
 closePargraf :: Parser String
 closePargraf   = char '}' >>>= \env _ ->  parserReturn env ("}")                                           
 
--- Parse open square parenthesis (with a possible space prefix)
+-- Parse open parentheses (with a possible space prefix)
 openPar :: Parser String
 openPar = char '(' >>>= \env _ -> parserReturn env "("
 
--- Parse closed square parenthesis (with a possible space prefix)
+-- Parse closed parentheses (with a possible space prefix)
 closePar :: Parser String
 closePar = char ')' >>>= \env _ -> space >>>= \_ _ -> parserReturn env ") "
 
