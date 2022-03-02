@@ -49,7 +49,7 @@ parse p env inp = p env inp
              
 -- SEQUENCING operator (>>>=). parse p >>>= f fails if the application of the parser p to the input string fails, and otherwise applies the function f to the result value to give a
 -- second parser, which is then applied to the output string to give the final result
-(>>>=) :: Parser a -> (Env -> a -> Parser b ) -> Parser b
+(>>>=) :: Parser a -> (Env -> a -> Parser b ) -> Parser b --This is a MONAD (a box, a function applied to the element in the box, and a box as result in out)
 p >>>= f = \env inp -> case parse p env inp of
                        [] -> []
                        [(env, v, out)] -> parse (f env v) env out
