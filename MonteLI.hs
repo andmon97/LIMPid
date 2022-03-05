@@ -28,7 +28,6 @@ item = \env inp -> case inp of
                    []     -> []
                    (x:xs) -> [(env,x,xs)] 
                    
--- "parserReturn" modify the environment after an assignment
 -- return a Parser after sostituting the elements of the expression a and Env of the triple with the input values
 parserReturn  :: Env -> a -> Parser a
 parserReturn newenv v = \env inp -> [(newenv, v,inp)]
@@ -51,8 +50,8 @@ parse p env inp = p env inp
 -- second parser, which is then applied to the output string to give the final result
 (>>>=) :: Parser a -> (Env -> a -> Parser b ) -> Parser b --This is a MONAD (a box, a function applied to the element in the box, and a box as result in out)
 p >>>= f = \env inp -> case parse p env inp of
-                       [] -> []
-                       [(env, v, out)] -> parse (f env v) env out
+                       [] -> []   -- If nothing (first parser) in input, parse nothing
+                       [(env, v, out)] -> parse (f env v) env out  -- If in input there is the triple, parse the application of the sec parser (function) to the unboxed element v
 
 -- Parse a character if the predicate p is satisfied
 sat  :: (Char -> Bool) -> Parser Char
