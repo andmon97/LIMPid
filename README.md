@@ -109,6 +109,19 @@ x:=20;do { x:=x+1; if (x<30) { y:=x+1; }; }while (x<40) ;
 -+-+ Memory +-+-
 x=>40 y=>30 
 ```
+
+Array assignment.
+```sh
+LIMPid#>a:={10,20,30,777};
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+a:={10,20,30,777};
+
+-+-+ Memory +-+-
+a[0]=>10 a[1]=>20 a[2]=>30 a[3]=>777 
+```
+
 Use of the While-do.
 ```sh
 LIMPid#>x:=0;
