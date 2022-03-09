@@ -76,3 +76,62 @@ letter ::= a-z
 space ::= " "
 
 ```
+## How to compile start
+
+In a Linux-like system, first install Haskell GHC and then
+```sh
+(base) andrea@andrea-N552VX:~/Desktop/LIMPid$ ghci
+GHCi, version 8.8.4: https://www.haskell.org/ghc/  :? for help
+Prelude> :load LIMPid.hs
+[1 of 1] Compiling Main             ( LIMPid.hs, interpreted )
+Ok, one module loaded.
+*Main> limpid
+
+-+-+-+-+-+- LIMPid Language Interpreter -+-+-+-+-+-
+
+Type ":help" for commands
+
+LIMPid#> TYPE HERE THE CODE TO PARSE AND INTERPRET
+
+```
+
+## Examples of use
+
+Variable assignment and Do-while with nested if-then-else.
+```sh
+LIMPid#>x:=20;
+LIMPid#>do { x:=x+1; if (x<30) { y:=x+1; }; }while (x<40) ;
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+x:=20;do { x:=x+1; if (x<30) { y:=x+1; }; }while (x<40) ;
+
+-+-+ Memory +-+-
+x=>40 y=>30 
+```
+Use of the While-do.
+```sh
+LIMPid#>x:=0;
+LIMPid#>while (x<10) { do x:=x+1; };
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+x:=0;while (x<10) { do x:=x+1; };
+
+-+-+ Memory +-+-
+x=>10 
+```
+
+Use of the For-times. Note that the for has a problenm that need to be solved: the variable that controls the iterations is decremented in the environment.
+```sh
+LIMPid#>x:=10;
+LIMPid#>y:=0;
+LIMPid#>for x times { y:=y+1; };
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+x:=10;y:=0;for x times { y:=y+1; };
+
+-+-+ Memory +-+-
+x=>0 y=>10 
+```
