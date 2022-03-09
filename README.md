@@ -1,6 +1,4 @@
-# MonteLI
-
-![Image](ico.png)
+# ![Image](ico.png) MonteLI
 
 A simple language interpreter of the IMP Language, written in Haskell, for didactic purposes. 
 
