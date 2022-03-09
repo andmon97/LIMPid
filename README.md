@@ -1,11 +1,11 @@
-# ![Image](ico.png) MonteLI
+# ![Image](ico.png) LIMPid
 
-A simple language interpreter of the IMP Language, written in Haskell, for didactic purposes. 
+A simple Language Interpreter of the IMP Language, written in Haskell, for Didactic purposes. 
 
 This work is part of the *"Formal Methods in Computer Science"* exam at *University of Bari "Aldo Moro".*
 
 ## Features
-MonteLI is an interpreter (with a parser) of an IMP language composed of some constructs:
+LIMPid is an interpreter (with a parser) of an IMP language composed of the following constructs:
 - **skip** performs a jump to the next instruction;
 - **assignment** assigns a value to a variable by calculating it if it is written in the form of an expression;
 - **If-then-else** conditional control structure;
@@ -13,7 +13,7 @@ MonteLI is an interpreter (with a parser) of an IMP language composed of some co
 - **While-do** iterative control structure of the while-do type;
 - **For-times** iterative control structure of the for type;
 
-*MonteLI* uses dynamic typization, accepts integer and Boolean data.
+*LIMPid* uses dynamic typization, accepts integer and Boolean data.
 
 ## Grammar
 ```EBNF

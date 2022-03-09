@@ -20,7 +20,7 @@ type Parser a = Env -> String -> [(Env, a, String)]
 
 
 -- _____________________________________________________________________________________________________________________________________--
---                  PARSER FUNCTIONS                --
+--                  PARSER FUNCTIONS                
 -- _____________________________________________________________________________________________________________________________________--
 -- "item" parses the first element of a list and return the rest of the list
 item :: Parser Char
@@ -68,7 +68,7 @@ char x = sat (x ==)
 
 
 -- _____________________________________________________________________________________________________________________________________--
---                  ENVIRONMENT MANIPULATIONS                     --
+--                  ENVIRONMENT MANIPULATIONS                     
 -- _____________________________________________________________________________________________________________________________________--
 {- "setEnv" sets the environment adding or sobstituting a couple var-val
 - v is the NAME of the variable
@@ -813,7 +813,7 @@ program = command >>>= \env c -> ( program >>>= \env p -> parserReturn env (c ++
 parser  :: String -> IO String
 parser xs =
     do
-      putStr "MonteLI#>"
+      putStr "LIMPid#>"
       hFlush stdout -- flushes all the buffered output data
       ys <- getLine 
       case ys of
@@ -835,7 +835,7 @@ parser xs =
         ":syntax" ->
           do 
             -- here output the formal grammar
-            putStrLn "-+-+ MonteLI Syntax +-+-"
+            putStrLn "-+-+ LIMPid Syntax +-+-"
             putStrLn ""
             putStrLn  "  program := <command> | <command> <program>"
             putStrLn  "  command ::= <skipcommand> | <assignmentcommand> | <ifcommand> | <whilecommand>"
@@ -871,15 +871,15 @@ parser xs =
         ":help" ->
           do
             -- here the Help section whith the explanations of the possible commands
-            putStrLn "-+-+ MonteLI Help +-+-"
+            putStrLn "-+-+ LIMPid Help +-+-"
             putStrLn  ""
             putStrLn  "  :printmem      prints the parsed code and the status of the memory"
             putStrLn  ""
-            putStrLn  "  :syntax        prints the MonteLI formal grammar"
+            putStrLn  "  :syntax        prints the LIMPid formal grammar"
             putStrLn  ""
             putStrLn  "  :help          prints the help with the commands of the program"
             putStrLn  ""
-            putStrLn  "  :quit          stops the MonteLI program"
+            putStrLn  "  :quit          stops the LIMPid program"
             putStrLn  ""
             parser xs
         
@@ -900,13 +900,13 @@ parser xs =
 
 
 -- Call this functions to start the program (the Interpreter)
-monteLI :: IO String
-monteLI = do
+limpid :: IO String
+limpid = do
             putStrLn ""
             putStrLn ""
             putStrLn ""
             putStrLn ""
-            putStrLn "-+-+-+-+-+- MONTEMURRO Language Interpreter -+-+-+-+-+-"
+            putStrLn "-+-+-+-+-+- LIMPid Language Interpreter -+-+-+-+-+-"
             putStrLn ""
             putStrLn "Type \":help\" for commands"
             putStrLn ""
