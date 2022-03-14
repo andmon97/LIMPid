@@ -758,6 +758,7 @@ repeatNTimes env p v = if bind env v <= "0" then -- Condition is evaluated at ea
                     
 
 -- If command
+-- ifcommand ::= if <space> ( <bexp> ) <space> then { <space> (<program> | <program> else { <space> <program>) } <semicolon>
 ifCommand         :: Parser String
 ifCommand         = ifKeyword >>>= \env i ->
                       openPar >>>= \env op ->
@@ -797,6 +798,7 @@ ifCommand         = ifKeyword >>>= \env i ->
                                     )
 
 -- While command
+-- whilecommand ::= while <space> ( <bexp> ) <space> { <space> do <space> <program> <space> } <semicolon>
 whileCommand        :: Parser String
 whileCommand        = whileKeyword >>>= \env w ->
                         openPar >>>= \env op ->
@@ -815,6 +817,7 @@ whileCommand        = whileKeyword >>>= \env w ->
                                             parserReturn env (w ++ op ++ b ++ cp ++ ogr ++ t1 ++ p ++ cgr ++ s)
 
 -- Do While command parserReturn env (d ++ opg ++ p ++ cpg ++ op ++ b ++ cp ++ s)
+-- dowhilecommand ::= do <space> { <space> do <space> <program> <space> } while <space> ( <bexp> ) <space> <semicolon>
 dowhileCommand  :: Parser String
 dowhileCommand  = doKeyword >>>= \env d ->
                           openPargraf >>>= \env opg ->
@@ -825,9 +828,9 @@ dowhileCommand  = doKeyword >>>= \env d ->
                                     parsebexpr >>>= \env b ->
                                       closePar >>>= \env cp ->
                                         semicolon >>>= \env s ->
-                                          parserReturn (getEnv (parse program env p)) p >>>= \envw _ -> -- execution of the p program inside the do - block
+                                          parserReturn (getEnv (parse program env p)) p >>>= \envw _ -> -- execution of the p program inside the do - block for the first iteration
                                             if (getCode (parse bexpr env b)) -- the bexpr is re-evaluated every cicle 
-                                              then
+                                              then -- program reexcuted with the new env and the execution of the code
                                                 parserReturn (getEnv (parse program envw (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s))) (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
                                               else
                                                 parserReturn env (d ++ opg ++ p ++ cpg ++ w ++ op ++ b ++ cp ++ s)
