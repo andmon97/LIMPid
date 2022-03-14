@@ -506,7 +506,8 @@ parseprogram = parsecommand >>>= \env c -> ( parseprogram >>>= \env p -> parserR
 
 -- ARITHMETIC EXPRESSIONS
 
--- Positive number are made of one or more digits
+-- Positive number are made of one or more digits (SAME of the syntax parsing -> we have just to collect the string of the pos. number)
+-- positivenumber ::= <digit> | <digit> <positivenumber>
 positivenumber      :: Parser String
 positivenumber      = digit >>>= \env d ->
                                 (
@@ -516,19 +517,21 @@ positivenumber      = digit >>>= \env d ->
                                 +++
                                 parserReturn env [d]
 
--- Integer number or variable                        
+-- Integer number or variable    
+-- number ::= <positivenumber> | <variable>                    
 number              :: Parser String
 number              = positivenumber  +++ 
                                     (
                                       variable >>>= \env v -> 
-                                        parserReturn env (bind env v)
+                                        parserReturn env (bind env v) -- in case of var we have to bind wrt the only syuntax check 
                                     ) -- substitutes the variables with their values
 
 -- Arithmetic positive factor made of integer numbers or arithmetic expression inside parentheses
+-- apositivefactor ::= <number> | ( <aexp> )
 apositivefactor     :: Parser Int 
 apositivefactor     = (
                         number >>>= \env n -> 
-                          parserReturn env (read n :: Int )
+                          parserReturn env (read n :: Int ) -- Different from the only syntax parsing: we have to cast the string and memorize in the env the value (int)
                       )
                       +++
                       (
@@ -538,23 +541,26 @@ apositivefactor     = (
                               parserReturn env e
                       )
 
--- Arithmetic negative factor made by negating positivefactor                                          
+-- Arithmetic negative factor made by negating positivefactor      
+-- anegativefactor ::= - | <apositivefactor>                                    
 anegativefactor     :: Parser Int 
 anegativefactor     = char '-' >>>= \env _ ->
                         apositivefactor >>>= \env f ->
-                          parserReturn env (f * (-1))
+                          parserReturn env (f * (-1))       -- Different, but just to reverse sign
 
--- Arithmetic can be negative or positive factor                      
+-- Arithmetic can be negative or positive factor   
+-- afactor ::= <apositivefactor> | <anegativefactor>                   
 afactor            :: Parser Int
 afactor            = anegativefactor +++ apositivefactor 
 
 -- Evaluation of the aexpr wich contains * or /
+-- aterm ::= <afactor> | <afactor> <aexpOp2> <aterm>
 aterm              :: Parser Int 
 aterm              = afactor >>>= \env f ->
                                 (
                                   char '*' >>>= \env _ ->
                                     aterm >>>= \env t ->
-                                      parserReturn env (f * t)  -- here operands can be applied because the values have been sobstituted by the bind
+                                      parserReturn env (f * t)  -- here operands can be applied because the values have been sobstituted by the casting in the previous defined functions
                                 )
                                 +++
                                 (
@@ -565,6 +571,8 @@ aterm              = afactor >>>= \env f ->
                                 +++
                                 parserReturn env f
 
+-- Evaluation of arithmetic expr
+-- aexpr ::= <aterm> | <aterm> <aexpOp1> <aexp>
 aexpr               :: Parser Int 
 aexpr               = aterm >>>= \env t ->
                                 (
@@ -583,7 +591,8 @@ aexpr               = aterm >>>= \env t ->
 
 -- BOOLEAN EXPRESSIONS
 
--- Boolean factor made of Arithmetic expression combined by comparison operator                 
+-- evaluation of Boolean factor made of Arithmetic expression combined by comparison operator         
+-- bfactor ::= <aexp> | <aexp> <comparisonOp> <aexp> | <variable>        
 bfactor             :: Parser Bool
 bfactor             = (aexpr >>>= \env a1 ->
                                 (
@@ -634,7 +643,8 @@ bfactor             = (aexpr >>>= \env a1 ->
                             else
                               failure
                       )
-
+-- Evaluation of bterm
+-- bterm ::= <bfactor> | ( <bexp> ) | ! <bexp>
 bterm :: Parser Bool
 bterm = 
         ((trueKeyword +++ falseKeyword) >>>= \env b1 -> parserReturn env (read b1 :: Bool)) +++
@@ -642,6 +652,8 @@ bterm =
         (char '(' >>>= \env _ -> bexpr >>>= \env b3 -> char ')' >>>= \env _ -> parserReturn env b3) +++
         (char '!' >>>= \env _ -> bexpr >>>= \env b4 -> parserReturn env (not b4))
 
+-- Evaluation of bexpr
+-- bexp ::= <bterm> | <bterm> <bexpOp> <bexp>
 bexpr             :: Parser Bool
 bexpr             = bterm >>>= \env b1 ->
                               (
@@ -661,13 +673,15 @@ bexpr             = bterm >>>= \env b1 ->
 --      COMMAND EXPRESSIONS
 
 -- Skip command is composed of skip keyword and semicolon
+-- skipcommand ::= skip <semicolon>
 skipCommand       :: Parser String
 skipCommand       = skipKeyword >>>= \env sk ->
                                     semicolon  >>>= \_ s ->
                                       parserReturn env (s ++ sk)
 
 -- This function recognizes the assignment command, in particular the variable
--- and the assigned value (integer or Boolean), and also the assigment to an element of an array. 
+-- and the assigned value (integer or Boolean), and also the assigment to an element of an array.
+-- assignmentcommand ::= <variable> := (<aexp> | <bexp>) <semicolon> | <letter> := { <array> } <semicolon>  
 assignmentCommand :: Parser String
 assignmentCommand = (variable >>>= \env v ->
                         char ':' >>>= \env _ -> 
@@ -688,7 +702,7 @@ assignmentCommand = (variable >>>= \env v ->
                              char ':' >>>= \env _ -> 
                              char '=' >>>= \env _ -> 
                              char '{' >>>= \env op ->
-                             arrayType  >>>= \env ar -> --this read the array, so it parse a list of integer
+                             arrayType  >>>= \env ar -> --this read the array elements, so it parse a list of integer
                              char '}' >>>= \env cp ->  
                              semicolon >>>= \env s ->  
                              parserReturn (saveArray env [v] ar ) ([v] ++ ":=" ++ [op] ++ (show ar) ++ [cp] ++ s) -- in order to save the array, manipulate env with savearray
@@ -697,6 +711,7 @@ assignmentCommand = (variable >>>= \env v ->
 -- The functions for saving arrays are arrayType and saveArray. The first, arrayType returns an [int] list 
 -- from the parsing of the elements, taken as a parameter by savearray with the env and the variable, 
 -- to save the single elements in the env, i.e. y:={2,5}; -> y[0]:=2; y[1]:=5;
+-- array ::= <afactor> | <afactor> <colon> <array>
 arrayType ::  Parser [Int]
 arrayType  = afactor  >>>= \env n -> 
                 (
@@ -708,12 +723,15 @@ arrayType  = afactor  >>>= \env n ->
                    parserReturn env [n]
 
 saveArray :: Env -> String -> [Int] -> Env
+                      --foldl :: (a -> b -> a) -> a -> [b] -> a
 saveArray env var list = foldl (\e v -> setEnv (fst v) (snd v) e) env l  -- in the v = [(name, value)]
-                         where l = zipWith (\val index ->  -- makes a list, its elements are calculated from the function and the elements of input lists occuring at the same position in both lists
+                        -- zipWith:: 	(a -> b -> c) -> [a] -> [b] -> [c] makes a list, its elements are calculated from the function and the elements of input lists occuring at the same position in both lists
+                         where l = zipWith (\val index ->     -- so this we are going to memorize in the env in form of string
                                   (var ++ "[" ++ (show index) ++ "]", show (val) )) list [0..] -- So the list in out is a string of this pattern
                               
 -- For the For statement, LIMPid first evaluates the value of the variable that represents the number of iterations of the program that will be execute, 
 -- then parses the program (parseprogram) without its  evaluation and computes the function repeatNTimes
+-- forcommand ::= for <space> <variable> <space> times <space> { <space> <program> <space> }
 forCommand :: Parser String
 forCommand = forKeyword >>>= \env f ->  
               variable >>>= \env v ->
@@ -725,19 +743,18 @@ forCommand = forKeyword >>>= \env f ->
                             semicolon >>>= \env s ->
                             parserReturn env (f ++ v ++ t ++ op ++ r ++ cp ++ s)
 
--- RepeatNTimes accepts as parameters the env with the variable for the iteration evaluated 
+-- RepeatNTimes takes as parameters the env with the variable for the iteration evaluated 
 -- and the program parsed but not executed.
 -- So, if there are not iteration to be executed (the variable is zero or a negative number), 
 -- then LIMPid leaves the program only parsed and not evaluated.
-
 repeatNTimes :: Env -> String -> String  -> Parser String
 repeatNTimes env p v = if bind env v <= "0" then -- Condition is evaluated at each iteration of the for statement
                               parserReturn env p
                           else 
-                            parserReturn env (v ++ ":=" ++ v ++ "-" ++ "1" ++ ";") >>>= \env dec->     -- decremented for the executed iteration
-                                parserReturn  (getEnv (parse program env dec)) dec  >>>= \envdec _ -> 
+                            parserReturn env (v ++ ":=" ++ v ++ "-" ++ "1" ++ ";") >>>= \env dec->     -- Is like we read in the code this statement
+                                parserReturn  (getEnv (parse program env dec)) dec  >>>= \envdec _ ->  -- And we use it to update the env with such a statement
                                   parserReturn (getEnv (parse program envdec p)) p >>>= \envf _ -> 
-                                    repeatNTimes envf p v -- executes again the for with the new environment
+                                    repeatNTimes envf p v -- executes again the for with the new environment in a recursively way
                     
 
 -- If command
@@ -843,10 +860,10 @@ parser xs =
             if xs == [] then
               putStrLn ""
             else
-              putStrLn (getCode (parse parseprogram [] xs))
+              putStrLn (getCode (parse parseprogram [] xs)) -- here code parsing
             putStrLn ""
             putStrLn "-+-+ Memory +-+-"
-            putStrLn (getMemory (parse program [] xs))
+            putStrLn (getMemory (parse program [] xs))      -- like a tostring to see the mem situation, here the real execution of the program
             putStrLn ""
             parser xs
         
@@ -906,7 +923,7 @@ parser xs =
             return []
         
         otherwise ->
-          -- Error situation (input in the shell is not a valid command)
+          -- Error situation (input in the shell is not a valid command) JUST SYNTAX CHECK
           case parse parseprogram [] ys of
             [] ->
               do
