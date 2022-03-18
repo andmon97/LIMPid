@@ -121,19 +121,6 @@ a:={10,20,30,777};
 -+-+ Memory +-+-
 a[0]=>10 a[1]=>20 a[2]=>30 a[3]=>777 
 ```
-
-Use of the **While-do**.
-```sh
-LIMPid#>x:=0;
-LIMPid#>while (x<10) { do x:=x+1; };
-LIMPid#>:printmem
-
--+-+ Parsed Code +-+-
-x:=0;while (x<10) { do x:=x+1; };
-
--+-+ Memory +-+-
-x=>10 
-```
 More stuff with **arrays**:
 ```sh
 LIMPid#>index:=0;
@@ -146,4 +133,31 @@ v:={1,2,3};index:=0;value:=100;accumulator:=v[0]+v[1]+v[2];
 
 -+-+ Memory +-+-
 v[0]=>1 v[1]=>2 v[2]=>3 index=>0 value=>100 accumulator=>6 
+```
+
+Use of the **While-do loop**.
+```sh
+LIMPid#>x:=0;
+LIMPid#>while (x<10) { do x:=x+1; };
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+x:=0;while (x<10) { do x:=x+1; };
+
+-+-+ Memory +-+-
+x=>10 
+```
+
+Use of the **For-times loop**.
+```sh
+LIMPid#>x:=5;
+LIMPid#>y:=0;
+LIMPid#>for x times { y:=y+1; };
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+x:=5;y:=0;for x times { y:=y+1; };
+
+-+-+ Memory +-+-
+x=>0 y=>5 
 ```
