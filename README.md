@@ -135,16 +135,27 @@ x:=0;while (x<10) { do x:=x+1; };
 x=>10 
 ```
 
-Use of the For-times. Note that the for has a problenm that need to be solved: the variable that controls the iterations is decremented in the environment.
+Use of thearrays.
 ```sh
-LIMPid#>x:=10;
-LIMPid#>y:=0;
-LIMPid#>for x times { y:=y+1; };
+LIMPid#>v:={1,2,3};
 LIMPid#>:printmem
 
 -+-+ Parsed Code +-+-
-x:=10;y:=0;for x times { y:=y+1; };
+v:={1,2,3};
 
 -+-+ Memory +-+-
-x=>0 y=>10 
+v[0]=>1 v[1]=>2 v[2]=>3 
+```
+More stuff:
+```sh
+LIMPid#>index:=0;
+LIMPid#>value:=100;
+LIMPid#>accumulator:=v[0]+v[1]+v[2];
+LIMPid#>:printmem
+
+-+-+ Parsed Code +-+-
+v:={1,2,3};index:=0;value:=100;accumulator:=v[0]+v[1]+v[2];
+
+-+-+ Memory +-+-
+v[0]=>1 v[1]=>2 v[2]=>3 index=>0 value=>100 accumulator=>6 
 ```
