@@ -76,7 +76,7 @@ letter ::= a-z
 space ::= " "
 
 ```
-## How to compile start
+## How to compile and start
 
 In a Linux-like system, first install Haskell GHC and then
 ```sh
@@ -97,7 +97,7 @@ LIMPid#> TYPE HERE THE CODE TO PARSE AND INTERPRET
 
 ## Examples of use
 
-Variable assignment and Do-while with nested if-then-else.
+**Variable assignment** and **Do-while** with nested **if-then-else**.
 ```sh
 LIMPid#>x:=20;
 LIMPid#>do { x:=x+1; if (x<30) { y:=x+1; }; }while (x<40) ;
@@ -110,7 +110,7 @@ x:=20;do { x:=x+1; if (x<30) { y:=x+1; }; }while (x<40) ;
 x=>40 y=>30 
 ```
 
-Array assignment.
+**Array assignment**.
 ```sh
 LIMPid#>a:={10,20,30,777};
 LIMPid#>:printmem
@@ -122,7 +122,7 @@ a:={10,20,30,777};
 a[0]=>10 a[1]=>20 a[2]=>30 a[3]=>777 
 ```
 
-Use of the While-do.
+Use of the **While-do**.
 ```sh
 LIMPid#>x:=0;
 LIMPid#>while (x<10) { do x:=x+1; };
@@ -134,19 +134,7 @@ x:=0;while (x<10) { do x:=x+1; };
 -+-+ Memory +-+-
 x=>10 
 ```
-
-Use of thearrays.
-```sh
-LIMPid#>v:={1,2,3};
-LIMPid#>:printmem
-
--+-+ Parsed Code +-+-
-v:={1,2,3};
-
--+-+ Memory +-+-
-v[0]=>1 v[1]=>2 v[2]=>3 
-```
-More stuff:
+More stuff with **arrays**:
 ```sh
 LIMPid#>index:=0;
 LIMPid#>value:=100;
